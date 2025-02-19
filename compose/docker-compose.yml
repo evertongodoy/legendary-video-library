@@ -1,0 +1,19 @@
+services:
+  mongodb:
+    image: mongo:8.0.4 # Imagem do MongoDB
+    container_name: mongo-container-video-library # Nome do container no Docker
+    restart: always # Reinicia o container automaticamente quando ele para
+    ports:
+      - "27017:27017" # Mapeia a porta local 27017 para a porta do container
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: library # Usuário administrador do MongoDB
+      MONGO_INITDB_ROOT_PASSWORD: library # Senha do administrador
+      MONGO_INITDB_DATABASE: librarydb   # Nome do banco de dados inicial
+    volumes:
+      - mongodb_data_lvl:/data/db # Persistência dos dados do MongoDB
+      - ./entrypoint/init.js:/docker-entrypoint-initdb.d/init.js:ro # Script de inicialização do MongoDB
+
+volumes:
+  mongodb_data_lvl:
+    name: mongodb_data_legendary_video_library # Define um nome fixo para o volume
+    driver: local # Armazena os dados localmente. O Docker criará o volume automaticamente

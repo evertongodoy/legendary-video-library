@@ -1,0 +1,15 @@
+server:
+  port: 8090 # Port number
+
+spring:
+  application:
+    name: legendary-video-library # Application name
+  data:
+    mongodb:
+      uri: mongodb://library:library@localhost:27017/librarydb?authSource=librarydb # MongoDB connection string
+  jackson:
+    property-naming-strategy: SNAKE_CASE # insert snake_case in JSON
+
+log4j2:
+  formatMsgNoLookups: true # Remove lookups from log messages vulnerability
+
