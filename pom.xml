@@ -33,7 +33,7 @@
 			<version>${spring-boot-starter-data-mongodb.version}</version>
 		</dependency>
 
-		<!-- Spring Web, Suporte a controladoresm, templates e Tomcat embutido-->
+		<!-- Spring Web, Suporte a controladores, templates e Tomcat embutido-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
