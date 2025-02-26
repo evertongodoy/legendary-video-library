@@ -2,6 +2,7 @@ package br.senac.sp.library.controller;
 
 import br.senac.sp.library.controller.response.LegendaryVideoResponse;
 import br.senac.sp.library.usecase.LegendaryVideoUseCase;
+import br.senac.sp.security.tokens.annotation.EscopoNecessario;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ public class LegendaryVideoController {
         this.legendaryVideoUseCase = legendaryVideoUseCase;
     }
 
+    @EscopoNecessario({"listar-filmes"})
     @GetMapping(value = "/recuperar/todos")
     public ResponseEntity<LegendaryVideoResponse> recuperarTodos() {
         logger.info("[LegendaryVideoController]-[recuperarTodos] - Recuperando todos os filmes!");
