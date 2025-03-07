@@ -11,6 +11,14 @@ spring:
     property-naming-strategy: SNAKE_CASE # insert snake_case in JSON
   kafka:
     bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer #org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        linger.ms: 10
+        delivery.timeout.ms: 300000 # 5 minutos
+        request.timeout.ms: 20000
+        max.block.ms: 60000
     consumer:
       group-id: video-consumer-group # VERIFICAR COMO PRODUZIR PARA O MESMO GRUPO
       auto-offset-reset: earliest

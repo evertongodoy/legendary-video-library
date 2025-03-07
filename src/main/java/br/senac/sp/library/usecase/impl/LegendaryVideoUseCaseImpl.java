@@ -18,6 +18,7 @@ import java.util.UUID;
 public class LegendaryVideoUseCaseImpl implements LegendaryVideoUseCase {
 
     private static final Logger logger = LogManager.getLogger(LegendaryVideoUseCaseImpl.class);
+    private static final String TOPIC = "devolve-videos-library";
 
     private final LegendaryVideoDataBase legendaryVideoDataBase;
     private final KafkaTemplate<String, String> kafkaTemplate;
@@ -39,31 +40,25 @@ public class LegendaryVideoUseCaseImpl implements LegendaryVideoUseCase {
 
     @Override
     public void publicarListaVideos(final List<LegendaryVideoModel> legendaryVideos) {
-
-        var key = UUID.randomUUID().toString();
-
         try {
             logger.info("[LegendaryVideoUseCaseImpl]-[publicarListaVideos] - Convertendo para JSON");
             var json = objectMapper.writeValueAsString(legendaryVideos);
 
             logger.info("[LegendaryVideoUseCaseImpl]-[publicarListaVideos] - Criar ProducerRecord com chave e valor JSON");
-            ProducerRecord<String, String> record = new ProducerRecord<>("devolve-videos-library", key, json);
+            ProducerRecord<String, String> record = new ProducerRecord<>(TOPIC, UUID.randomUUID().toString(), json);
 
             logger.info("[LegendaryVideoUseCaseImpl]-[publicarListaVideos] - Enviar mensagem para o Kafka");
             kafkaTemplate.send(record).whenComplete((result, ex) -> {
                 if (ex == null) {
-                    logger.info("[LegendaryVideoUseCaseImpl]-[publicarListaVideos] - Sucesso, mensagem {} enviada no topico {}",
-                            json, "devolve-videos-library");
+                    logger.info("[LegendaryVideoUseCaseImpl]-[publicarListaVideos] - Sucesso, mensagem {} enviada no topico {}", json, TOPIC);
                 } else {
                     logger.error("[LegendaryVideoUseCaseImpl]-[publicarListaVideos] - Problemas ao enviar mensagem {}", ex.getMessage());
                 }
             });
 
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            logger.error("[LegendaryVideoUseCaseImpl]-[JsonProcessingException] - Erro ao enviar mensagem {}", e.getMessage());
         }
-
     }
-
 
 }
