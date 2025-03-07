@@ -1,4 +1,5 @@
 services:
+  # Configuração do MongoDB
   mongodb:
     image: mongo:8.0.4 # Imagem do MongoDB
     container_name: mongo-container-video-library # Nome do container no Docker
@@ -13,7 +14,74 @@ services:
       - mongodb_data_lvl:/data/db # Persistência dos dados do MongoDB
       - ./entrypoint/init.js:/docker-entrypoint-initdb.d/init.js:ro # Script de inicialização do MongoDB
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper-container-video-library
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-container-video-library
+    restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    command: >
+      bash -c "
+      /etc/confluent/docker/run &
+      sleep 10;
+      kafka-topics --create --if-not-exists --topic solicita-videos-library --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1;
+      wait
+      "
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-container-video-library
+    restart: always
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
 volumes:
   mongodb_data_lvl:
     name: mongodb_data_legendary_video_library # Define um nome fixo para o volume
     driver: local # Armazena os dados localmente. O Docker criará o volume automaticamente
+
+
+
+
+## Acessar o container do Kafka
+#  docker exec -it kafka-videos-library bash
+#  docker exec -it kafka-container-video-library bash
+#
+#  # Criar os tópicos no Kafka
+#  kafka-topics --create --topic solicita-videos-library --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+#  kafka-topics --create --topic lista-eventos-library --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+#
+#  # Listar os tópicos criados
+#  kafka-topics --list --bootstrap-server kafka:9092
+#
+#  # Testar envio de mensagem para um tópico
+#  kafka-console-producer --bootstrap-server kafka:9092 --topic solicita-videos-library
+#
+#  # Testar consumo de mensagens do tópico
+#  kafka-console-consumer --bootstrap-server kafka:9092 --topic solicita-videos-library --from-beginning
+#

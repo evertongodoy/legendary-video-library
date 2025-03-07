@@ -1,0 +1,97 @@
+services:
+  # Configuração do MongoDB
+  mongodb:
+    image: mongo:8.0.4 # Imagem do MongoDB
+    container_name: mongo-container-video-library # Nome do container no Docker
+    restart: always # Reinicia o container automaticamente quando ele para
+    ports:
+      - "27017:27017" # Mapeia a porta local 27017 para a porta do container
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: library # Usuário administrador do MongoDB
+      MONGO_INITDB_ROOT_PASSWORD: library # Senha do administrador
+      MONGO_INITDB_DATABASE: librarydb   # Nome do banco de dados inicial
+    volumes:
+      - mongodb_data_lvl:/data/db # Persistência dos dados do MongoDB
+      - ./entrypoint/init.js:/docker-entrypoint-initdb.d/init.js:ro # Script de inicialização do MongoDB
+
+  # Configuração do Zookeeper
+  # Usado pelo Kafka para gerenciar e os "Brokers" do Kafka, Broker é um Servidor Kafka que armazena os dados.
+  # Ele ajuda a manter as informações de configuração, eleição de líder para partições e rastreamento do status dos nós do Kafka.
+  # Essencialmente, o Zookeeper garante que o cluster do Kafka esteja sincronizado e ajuda a gerenciar a natureza distribuída do Kafka.
+  zookeeper: # Nome do serviço no Docker
+    image: confluentinc/cp-zookeeper:7.4.0 # Imagem do Zookeeper
+    container_name: zookeeper-videos-library # Nome do container no Docker
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181 # Porta de comunicação do Zookeeper
+      #      ZOOKEEPER_TICK_TIME: 2000
+      ALLOW_ANONYMOUS_LOGIN: "yes" # Permite login anonimo
+    ports:
+      - "2181:2181" # Mapeia a porta local 2181 para a porta do container
+    networks:
+      - kafka-network # Rede do Kafka para comunicação entre os serviços
+
+  # Configuração do Kafka
+  # O Kafka é um sistema de mensagens distribuído que é usado para publicar e assinar fluxos de registros.
+  # Ele é projetado para ser rápido, escalável e durável.
+  # O Kafka é capaz de lidar com grandes volumes de dados de maneira eficiente e em tempo real como Streams de Dados.
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0 # Imagem do Kafka
+    container_name: kafka-videos-library # Nome do container no Docker
+    depends_on:
+      - zookeeper # Dependencia do Zookeeper subir antes do Kafka
+    ports:
+      - "9092:9092" # Mapeia a porta local 9092 para a porta do container
+    environment:
+      KAFKA_BROKER_ID: 1 # ID do Broker
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # Conexao com o Zookeeper
+      #      KAFKA_ADVERTISED_HOST_NAME: "localhost" # Nome do host do Kafka, ex:  "localhost" kafka-advertised-1
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # Endereço do Kafka localhost  kafka
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: "yes" # Permite conexao sem autenticacao
+    networks:
+      - kafka-network
+
+  # Configuração do Kafka UI
+  # O Kafka UI é uma interface gráfica para o Kafka, que permite visualizar e gerenciar tópicos, partições, consumidores e mensagens.
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest # Imagem do Kafka UI
+    container_name: kafka-ui-videos-library # Nome do container no Docker
+    depends_on:
+      - kafka # Dependencia do Kafka subir antes do Kafka UI
+    ports:
+      - "8085:8080" # Mapeia a porta local 8085 para a porta do container
+    environment:
+      DYNAMIC_CONFIG_ENABLED: true
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - kafka-network
+
+volumes:
+  mongodb_data_lvl:
+    name: mongodb_data_legendary_video_library # Define um nome fixo para o volume
+    driver: local # Armazena os dados localmente. O Docker criará o volume automaticamente
+
+networks:
+  kafka-network: # Nome da rede no Docker para comunicação entre os serviços Kafka
+    driver: bridge # Define o tipo de rede para comunicação entre os serviços
+
+
+
+## Acessar o container do Kafka
+#  docker exec -it kafka-videos-library bash
+#
+#  # Criar os tópicos no Kafka
+#  kafka-topics --create --topic solicita-videos-library --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+#  kafka-topics --create --topic lista-eventos-library --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+#
+#  # Listar os tópicos criados
+#  kafka-topics --list --bootstrap-server kafka:9092
+#
+#  # Testar envio de mensagem para um tópico
+#  kafka-console-producer --bootstrap-server kafka:9092 --topic solicita-videos-library
+#
+#  # Testar consumo de mensagens do tópico
+#  kafka-console-consumer --bootstrap-server kafka:9092 --topic solicita-videos-library --from-beginning
+#
