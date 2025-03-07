@@ -20,11 +20,11 @@ spring:
         request.timeout.ms: 20000
         max.block.ms: 60000
     consumer:
-      group-id: video-consumer-group # VERIFICAR COMO PRODUZIR PARA O MESMO GRUPO
-      auto-offset-reset: earliest
+      group-id: video-consumer-group # Grupo de consumidores
+      auto-offset-reset: earliest # Configura o offset para o início do tópico
       enable-auto-commit: false  # Desativa o auto commit, O Kafka não confirmará mensagens automaticamente.
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # Deserializador da chave
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer # Deserializador do valor
       properties:
         spring.json.trusted.packages: "*"
     listener:
