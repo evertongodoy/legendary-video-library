@@ -7,4 +7,5 @@ import java.util.List;
 public interface LegendaryVideoUseCase {
 
     List<LegendaryVideoModel> recuperarTodos();
+    void publicarListaVideos(final List<LegendaryVideoModel> legendaryVideos);
 }
