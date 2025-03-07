@@ -14,32 +14,40 @@ services:
       - mongodb_data_lvl:/data/db # Persistência dos dados do MongoDB
       - ./entrypoint/init.js:/docker-entrypoint-initdb.d/init.js:ro # Script de inicialização do MongoDB
 
+  # Configuração do Zookeeper
+  # Usado pelo Kafka para gerenciar e os "Brokers" do Kafka, Broker é um Servidor Kafka que armazena os dados.
+  # Ele ajuda a manter as informações de configuração, eleição de líder para partições e rastreamento do status dos nós do Kafka.
+  # Essencialmente, o Zookeeper garante que o cluster do Kafka esteja sincronizado e ajuda a gerenciar a natureza distribuída do Kafka.
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper-container-video-library
-    restart: always
+    image: confluentinc/cp-zookeeper:7.9.0    # Imagem do Zookeeper
+    container_name: zookeeper-container-video-library # Nome do container no Docker
+    restart: always # Reinicia o container automaticamente quando ele para
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: 2181 # Porta do Zookeeper
     ports:
-      - "2181:2181"
+      - "2181:2181" # Mapeia a porta local 2181 para a porta do container
 
+  # Configuração do Kafka
+  # O Kafka é um sistema de mensagens distribuído que é usado para publicar e assinar fluxos de registros.
+  # Ele é projetado para ser rápido, escalável e durável.
+  # O Kafka é capaz de lidar com grandes volumes de dados de maneira eficiente e em tempo real como Streams de Dados.
   kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: kafka-container-video-library
-    restart: always
+    image: confluentinc/cp-kafka:7.9.0 # Imagem do Kafka
+    container_name: kafka-container-video-library # Nome do container no Docker
+    restart: always # Reinicia o container automaticamente quando ele para
     depends_on:
-      - zookeeper
+      - zookeeper # Depende do Zookeeper
     ports:
-      - "9092:9092"
-      - "29092:29092"
+      - "9092:9092"   # Se a aplicacao Java estiver rodando DENTRO do Docker
+      - "29092:29092" # Se voce esta rodando a aplicacao Java FORA do Docker
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    command: >
+      KAFKA_BROKER_ID: 1 # ID do Broker
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # Conexão com o Zookeeper
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092 # Listener do Kafka
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT # Protocolo de segurança do listener
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT # Nome do listener interno
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 # Fator de replicação do tópico de offsets
+    command: > # Comando para criar os tópicos no Kafka
       bash -c "
       /etc/confluent/docker/run &
       sleep 10;
@@ -48,26 +56,25 @@ services:
       wait
       "
 
+  # Configuração do Kafka UI
+  # O Kafka UI é uma interface gráfica para o Kafka, que permite visualizar e gerenciar tópicos, partições, consumidores e mensagens.
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui-container-video-library
-    restart: always
+    image: provectuslabs/kafka-ui:v0.7.2 # Imagem do Kafka UI
+    container_name: kafka-ui-container-video-library # Nome do container no Docker
+    restart: always # Reinicia o container automaticamente quando ele para
     depends_on:
-      - kafka
+      - kafka # Depende do Kafka
     ports:
-      - "8080:8080"
+      - "7085:8080" # Mapeia a porta local 7085 para a porta do container
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kafka
       KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
 
 volumes:
-  mongodb_data_lvl:
+  mongodb_data_lvl: # Define um volume para persistir os dados do MongoDB LVL = Legendary Video Library
     name: mongodb_data_legendary_video_library # Define um nome fixo para o volume
     driver: local # Armazena os dados localmente. O Docker criará o volume automaticamente
-
-
-
 
 ## Acessar o container do Kafka
 #  docker exec -it kafka-videos-library bash
@@ -75,7 +82,7 @@ volumes:
 #
 #  # Criar os tópicos no Kafka
 #  kafka-topics --create --topic solicita-videos-library --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
-#  kafka-topics --create --topic lista-eventos-library --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+#  kafka-topics --create --topic devolve-videos-library --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
 #
 #  # Listar os tópicos criados
 #  kafka-topics --list --bootstrap-server kafka:9092
