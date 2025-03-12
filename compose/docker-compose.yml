@@ -71,10 +71,34 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
 
+  redis:
+    image: redis:7.4.2
+    container_name: redis-cache-container-video-library
+    restart: always
+    ports:
+      - "6379:6379"
+    command: [ "redis-server", "--appendonly", "yes" ] # Persistência dos dados do Redis.
+    # redis-server → Inicia o servidor Redis
+    # --appendonly yes → Habilita a persistência dos dados no Redis
+    volumes: # Se você deseja que os dados do Redis sejam persistidos mesmo após reiniciar o container
+      - redis_data_lvl:/data #  Monta esse volume no diretório /data dentro do container Redis. Esse é o local onde o Redis armazena seu arquivo de persistência.
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander-container-video-library
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "7095:8081"
+
 volumes:
   mongodb_data_lvl: # Define um volume para persistir os dados do MongoDB LVL = Legendary Video Library
     name: mongodb_data_legendary_video_library # Define um nome fixo para o volume
     driver: local # Armazena os dados localmente. O Docker criará o volume automaticamente
+  redis_data_lvl:
+    name: redis_data_legendary_video_library # Define um nome fixo para o volume
+    driver: local
 
 ## Acessar o container do Kafka
 #  docker exec -it kafka-videos-library bash
